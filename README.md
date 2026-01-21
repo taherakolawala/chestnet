@@ -1,4 +1,4 @@
-﻿# CHESTNET: Automated Thoracic Disease Detection with CNNs
+﻿# Automated Thoracic Disease Detection with CNNs
 
 Taher Akolawala 
 

@@ -86,7 +86,7 @@ Taher Akolawala
    To observe why the AUC is only 0.73 despite a high accuracy, confusion matrices were plotted for all 14 diseases. The results show a severe class imbalance problem. For rare diseases like hernia, the model predicts ‘No’ for almost all images. It can be then assumed that the model has learned that predicting the patient is healthy is the statistically safest option. For example, in the infiltration matrix (which one of the most common diseases) the model was able to successfully identify many positive cases, but for hernia positive predictions were nonexistent. Such false negatives can be risky in a medical context. 
 
    ![.](figures/confusion_matrices.png)
-   Figure 4: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.
+   *Figure 4: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.*
 
 ## Implementation and Usage Discussion
    ### Limitations and Potential Use Case
@@ -106,7 +106,6 @@ Taher Akolawala
 ## Conclusion
 
    A CNN pipeline was successfully implemented for multilabel X-ray classification, achieving a test AUC of 0.7353. While the current model exhibits bias towards the majority classes in the data set, it can be easily improved with a larger, more diverse, dataset of higher resolution in conjunction with the improvements listed above. By doing so, the system can be used for automated diagnostics in radiology and significantly improve patient turnover times.
-
 
 
 **To run the code**: Clone the github repository, open test.ipynb, and run all cells. The model should evaluate on the test set, and display performance metrics as well as confusion matrices for each disease.

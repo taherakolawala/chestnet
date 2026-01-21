@@ -85,8 +85,9 @@ Taher Akolawala
 
    To observe why the AUC is only 0.73 despite a high accuracy, confusion matrices were plotted for all 14 diseases. The results show a severe class imbalance problem. For rare diseases like hernia, the model predicts ‘No’ for almost all images. It can be then assumed that the model has learned that predicting the patient is healthy is the statistically safest option. For example, in the infiltration matrix (which one of the most common diseases) the model was able to successfully identify many positive cases, but for hernia positive predictions were nonexistent. Such false negatives can be risky in a medical context. 
 
-   ![.](figures/confusion_matrices.png)
-   *Figure 4: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.*
+   | ![.](figures/confusion_matrices.png) |
+   | :----------------------------------:|
+   | *Figure 4: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.*|
 
 ## Implementation and Usage Discussion
    ### Limitations and Potential Use Case

@@ -14,6 +14,8 @@ Taher Akolawala
 
    Using the ChestMNIST dataset provided, which is a derivation of the NIH-ChestXray14 dataset, a deep learning solution was implemented to predict the probability of the 14 different diseases listed above simultaneously. 
 
+
+
 ## Methodology
    ### Data Preprocessing
 
@@ -21,6 +23,9 @@ Taher Akolawala
 
    1. Normalization: Pixel intensities were scaled from [0,255] to [0,1] to ensure faster convergence during gradient descent. 
    2. Dimension Expansion: Tensorflow’s Conv2D layers requires 4 dimensional input data in the format (Batch, Height, Width, Channel). To  accommodate this, I expanded the raw (N, 28, 28) arrays to (N, 28, 28, 1) to show that the images are in grayscale.
+
+   ![](figures/chestmnist_examples.png)
+   *Figure 1: A few of the ChestMNIST images after preprocessing.*
 
    ### CNN Architecture
 
@@ -72,13 +77,13 @@ Taher Akolawala
    The high accuracy of roughly 95% was initially impressive, however it is slightly misleading. Upon more analysis of the dataset, it was observed that roughly 40% of the dataset images were just 3 classes. As seen later in the confusion matrix, because of this, the model is much better at predicting if a patient is healthy compared to if they have a specific disease. Keeping this in mind, it would be advisable to keep AUC (0.7353) as a much more reliable metric, indicating that the model has a moderate ability to distinguish between positive and negative cases. 
 
    ### Learning Curves
-   The learning curves illustrate the dynamics of training. As seen in Figure 3 (below), the Training AUC (dotted line) continues to rise indefinitely, while the Validation AUC (solid line) plateaus around Epoch 10. This divergence is a classic signature of overfitting; the model began memorizing the training data rather than generalizing. The Early Stopping callback successfully prevented this by restoring the weights from Epoch 10.
+   The learning curves illustrate the dynamics of training. As seen in Figure 4 (below), the Training AUC (dotted line) continues to rise indefinitely, while the Validation AUC (solid line) plateaus around Epoch 10. This divergence is a classic signature of overfitting; the model began memorizing the training data rather than generalizing. The Early Stopping callback successfully prevented this by restoring the weights from Epoch 10.
 
    Additionally, the loss curves support this diagnosis. While training loss decreased across all epochs, validation loss had more of u shape, and it reached a global minimum at Epoch 10. The rising validation loss confirms that the model began to diverge from the ground truth on unseen data after epoch 10. Notably, binary accuracy continued to rise across all epochs, and there was only a marginal difference between the final validation and training binary accuracy values. This stability can only be attributed to the severe class imbalance. The model is able to achieve high accuracy by predicting the majority classes, which, as mentioned before, makes AUC a much better metric than accuracy for this specific case. 
 
    | ![](figures/binary_accuracy.png) | ![](figures/loss_curve.png) | ![](figures/auc_curve.png) |
    |:--------------:|:--------------:|:--------------:|
-   | Figure 1 | Figure 2 | Figure 3 |
+   | Figure 2 | Figure 3 | Figure 4 |
    | Binary Accuracy Learning Curve | Learning Curve for Loss Metric | Learning Curve for AUC |
 
    ### Quantitative Analysis: Confusion Matrices
@@ -87,7 +92,7 @@ Taher Akolawala
 
    | ![.](figures/confusion_matrices.png) |
    | :----------------------------------:|
-   | *Figure 4: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.*|
+   | *Figure 5: Confusion Matrices for all 14 diseases. Note the heavy concentration of predictions in the "No" columns, indicating the model favors specificity over sensitivity due to dataset imbalance.*|
 
 ## Implementation and Usage Discussion
    ### Limitations and Potential Use Case

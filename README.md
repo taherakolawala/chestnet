@@ -1,5 +1,7 @@
 ﻿# Automated Thoracic Disease Detection with CNNs
 
+[IEEE-style paper (PDF)](paper/chestnet-ieee.pdf) · [LaTeX source](paper/chestnet-ieee.tex)
+
 Taher Akolawala 
 
 ### Abstract

@@ -6,7 +6,7 @@
 \author{\IEEEauthorblockN{Taher Akolawala}}
 \maketitle
 \begin{abstract}
-We developed ChestNet, a compact convolutional neural network for predicting 14 thoracic findings from 28$\times$28 grayscale chest radiographs in ChestMNIST. The model combines three convolutional blocks with a sigmoid multilabel head and uses validation-area-under-the-curve (AUC) checkpointing and early stopping. On the test split, ChestNet achieved a loss of 0.1667, binary accuracy of 94.77\%, and AUC of 0.7353. Per-finding confusion matrices revealed that positive findings, particularly rare ones, were missed more often than aggregate accuracy suggests. ChestNet provides an exploratory baseline for low-resolution multilabel classification; the results do not establish clinical utility.
+We developed ChestNet, a compact convolutional neural network for predicting 14 thoracic findings from 28$\times$28 grayscale chest radiographs in ChestMNIST. The model combines three convolutional blocks with a sigmoid multilabel head and uses validation-area-under-the-curve (AUC) checkpointing and early stopping. On the 22,433-image test split, ChestNet achieved a macro AUC of 0.7353. At a 0.5 threshold it rarely predicts any finding: recall is zero for 11 of 14 findings and highest for effusion at 7.8\%. Its 94.77\% binary accuracy matches the 94.74\% obtained by predicting every label negative, so accuracy is uninformative here. ChestNet provides an exploratory baseline for low-resolution multilabel classification; the results do not establish clinical utility.
 \end{abstract}
 \begin{IEEEkeywords}
 chest radiography, ChestMNIST, convolutional neural network, multilabel classification, class imbalance
@@ -35,19 +35,20 @@ We optimized binary cross-entropy with Adam at an initial learning rate of $10^{
 \begin{table}[ht]
 \caption{ChestNet test-set results}
 \centering
-\begin{tabular}{lc}
+\begin{tabular}{lcc}
 \hline
-Measure & Value \\
+Measure & ChestNet & All negative \\
 \hline
-Binary cross-entropy loss & 0.1667 \\
-Binary accuracy & 94.77\% \\
-AUC & 0.7353 \\
+Macro AUC & 0.7353 & 0.5 \\
+Macro recall (0.5 threshold) & 0.007 & 0 \\
+Binary accuracy & 94.77\% & 94.74\% \\
+Binary cross-entropy loss & 0.1667 & -- \\
 \hline
 \end{tabular}
 \end{table}
-Table I summarizes ChestNet's test results. Binary accuracy counts correct decisions across all image--label pairs. Because most such pairs are negative, it can remain high even when sensitivity for uncommon diseases is low. The AUC of 0.7353 provides a threshold-independent view of discrimination, though an aggregate AUC still does not describe performance for every finding.
+Table I summarizes ChestNet's test results. Binary accuracy counts correct decisions across all image--label pairs. Only 16,510 of the 314,062 test pairs are positive, so a classifier that predicts every label negative scores 94.74\%, within 0.03 points of ChestNet. The AUC of 0.7353 provides a threshold-independent view of discrimination, though an aggregate AUC still does not describe performance for every finding.
 
-Per-finding confusion matrices show many negative predictions. Infiltration has some correctly identified positive cases, whereas hernia has no positive predictions at the evaluated threshold. This behavior limits any interpretation of the model as a triage aid: missed positives could delay review. We did not measure per-class recall, precision--recall curves, calibrated thresholds, confidence intervals, or performance against a clinical baseline. Those evaluations are needed to assess operating points for individual findings.
+Per-finding confusion matrices at a 0.5 threshold show almost no positive predictions. Only four findings have any true positives: effusion (216 of 2,754, 7.8\% recall), cardiomegaly (9 of 582), pneumothorax (1 of 1,089), and infiltration (2 of 3,938); the remaining ten have zero recall. This behavior rules out interpreting the model as a triage aid at this threshold, since missed positives could delay review. We did not measure precision--recall curves, validation-tuned thresholds, calibration, confidence intervals, or performance against a clinical baseline. Those evaluations are needed to assess operating points for individual findings.
 
 \balance
 \section{Limitations and Next Steps}
@@ -56,7 +57,7 @@ Low spatial resolution and uneven label frequencies are the principal constraint
 ChestNet has not been validated for diagnosis, worklist prioritization, or patient care. Before any such use, it would need robust external validation, subgroup analysis, and review of false negatives under realistic prevalence and workflow conditions. Our experiment illustrates why multilabel medical-image results require class-specific interpretation.
 
 \section{Conclusion}
-ChestNet achieved 0.7353 test AUC on ChestMNIST with a 14-output CNN. Its 94.77\% binary accuracy is insufficient evidence of reliable disease detection, especially given the rare-finding misses visible in the confusion matrices. Future work should prioritize class-specific sensitivity and external validation before making operational claims.
+ChestNet achieved 0.7353 test AUC on ChestMNIST with a 14-output CNN. Its 94.77\% binary accuracy is no better than predicting every label negative, and at a 0.5 threshold it detects almost no positive findings. Future work should prioritize class-specific sensitivity and external validation before making operational claims.
 
 \begin{thebibliography}{2}
 \bibitem{medmnist} J. Yang \emph{et al.}, ``MedMNIST v2: A large-scale lightweight benchmark for 2D and 3D biomedical image classification,'' \emph{Scientific Data}, vol. 10, art. 41, 2023.

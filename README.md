@@ -1,12 +1,12 @@
-﻿# Automated Thoracic Disease Detection with CNNs
+# Automated Thoracic Disease Detection with CNNs
 
-[IEEE-style paper (PDF)](paper/chestnet-ieee.pdf) · [LaTeX source](paper/chestnet-ieee.tex)
+[Paper (PDF)](paper/chestnet.pdf) · [LaTeX source](paper/chestnet.tex)
 
 Taher Akolawala 
 
 ### Abstract
 
-   This project explores the development of a Convolutional Neural Network (CNN) to automate the detection of 14 distinct thoracic diseases using the ChestMNIST dataset. In the face of increasing radiologist workloads, automated systems offer a potential solution for prioritizing critical cases. I trained a custom CNN on 28 X 28 grayscale X-ray images, utilizing adaptive learning rates and early stopping to optimize performance. The final model achieved a Test Area Under the Curve (AUC) of 0.7353 and a Binary Accuracy of 94.77%. However, a detailed analysis of confusion matrices reveals significant sensitivity issues driven by dataset imbalance. While the model excels at identifying healthy patients, it struggles to detect rare pathologies. With this in mind, I propose using the system trained with the limitations of the dataset in mind, to be used as a tool that can speed up workflows of radiologists.
+   I trained a small convolutional network (three conv blocks, about 392k parameters) to predict 14 thoracic findings at once from the 28×28 grayscale chest X-rays in ChestMNIST, using independent sigmoid outputs for the multi-label task and checkpointing on validation AUC. On the 22,433-image test split the model reaches a macro AUC of 0.735, meaning it ranks positive images above negative ones better than chance but only moderately, and at the default 0.5 threshold it almost never predicts a finding at all: recall is zero for 11 of the 14 findings, and the best case, effusion, catches 216 of 2,754 positive images (7.8%). The 94.77% binary accuracy the training loop reports is not evidence of anything here, because a model that answers "no finding" for every label on every image scores 94.74% on the same split. I treat the result as a low-resolution baseline whose obvious next steps are per-finding thresholds tuned on validation data and a class-weighted loss, and nothing in it supports clinical use.
 
 ## Introduction
 
@@ -68,15 +68,18 @@ Taher Akolawala
    3. ModelCheckpoint: Only the model weights with the highest Validation AUC were saved.
 
 ## Experimental Results
-   ### Quantitiative Performance
+   ### Quantitative Performance
 
    Although max epochs were set to 50, the training process lasted 20 epochs before early stopping was triggered. The best model saved was from epoch 10. It had the following performance on the test set:
 
-   - Loss: 0.1667
-   - Binary Accuracy: 94.77%
-   - AUC: 0.7353
+   | Metric | ChestNet | Always predict "no finding" |
+   |---|---|---|
+   | Macro AUC (mean over 14 findings) | **0.7353** | 0.5 |
+   | Macro recall at 0.5 threshold | 0.007 | 0.0 |
+   | Binary accuracy | 94.77% | 94.74% |
+   | Binary cross-entropy loss | 0.1667 | n/a |
 
-   The high accuracy of roughly 95% was initially impressive, however it is slightly misleading. Upon more analysis of the dataset, it was observed that roughly 40% of the dataset images were just 3 classes. As seen later in the confusion matrix, because of this, the model is much better at predicting if a patient is healthy compared to if they have a specific disease. Keeping this in mind, it would be advisable to keep AUC (0.7353) as a much more reliable metric, indicating that the model has a moderate ability to distinguish between positive and negative cases. 
+   I was pleased with the 95% accuracy when I first saw it, and it turned out to be almost exactly the base rate: only 16,510 of the 314,062 image-label pairs in the test split are positive, so predicting "no" everywhere already gets 94.74%. AUC is the number that carries information, and 0.735 says the model's scores rank sick images above healthy ones moderately well even though, at a fixed 0.5 cutoff, those scores almost never cross the line. 
 
    ### Learning Curves
    The learning curves illustrate the dynamics of training. As seen in Figure 4 (below), the Training AUC (dotted line) continues to rise indefinitely, while the Validation AUC (solid line) plateaus around Epoch 10. This divergence is a classic signature of overfitting; the model began memorizing the training data rather than generalizing. The Early Stopping callback successfully prevented this by restoring the weights from Epoch 10.
@@ -90,7 +93,17 @@ Taher Akolawala
 
    ### Quantitative Analysis: Confusion Matrices
 
-   To observe why the AUC is only 0.73 despite a high accuracy, confusion matrices were plotted for all 14 diseases. The results show a severe class imbalance problem. For rare diseases like hernia, the model predicts ‘No’ for almost all images. It can be then assumed that the model has learned that predicting the patient is healthy is the statistically safest option. For example, in the infiltration matrix (which one of the most common diseases) the model was able to successfully identify many positive cases, but for hernia positive predictions were nonexistent. Such false negatives can be risky in a medical context. 
+   Confusion matrices at a 0.5 threshold for all 14 findings make the imbalance concrete. Only four findings get any true positives at all, and none gets many:
+
+   | Finding | Positives in test set | Caught | Recall |
+   |---|---|---|---|
+   | Effusion | 2,754 | 216 | 7.8% |
+   | Cardiomegaly | 582 | 9 | 1.5% |
+   | Pneumothorax | 1,089 | 1 | 0.09% |
+   | Infiltration | 3,938 | 2 | 0.05% |
+   | The other 10 findings | 42 to 2,420 each | 0 | 0% |
+
+   The model has learned that predicting "healthy" is the statistically safest answer under binary cross-entropy with no class weighting, and every one of those misses is a false negative, which is the expensive kind of error in a medical setting. Because AUC is threshold-independent, a lower per-finding threshold chosen on the validation set would recover some recall, and that is the first experiment I would run next. 
 
    | ![.](figures/confusion_matrices.png) |
    | :----------------------------------:|
@@ -101,21 +114,22 @@ Taher Akolawala
 
    The current limitations for the model are the dataset characteristics. First that the resolution is only 28 by 28 which makes it insufficient for the purposes of radiology. Nodules become hard to decipher from noise. The second limitation is the class imbalance. Ideally, there would be a much larger selection of chest X-ray images for rarer diseases as well. 
 
-   Despite the issues, it is still possible that the model can be used to make radiologist workflows more efficient. Instead of using the model for automatic diagnosis, it can be used for worklist prioritization. The model can output a probability score, and then an underlying radiology software can rank X-rays based on the risk scores outputted by the model. Patients with high predicted probabilities for severe conditions can be moved to the top of the radiologist’s queue of work. This would ensure that patients who are in need of more urgent care can get their results sooner. 
+   The use case I had in mind was worklist prioritization, where the model's scores rank X-rays so that likely-positive studies reach a radiologist first, which only needs the ranking that AUC measures and not a calibrated threshold. A 0.735 AUC on 28×28 images is nowhere near good enough for that, and the model has not been validated on any external data, so this stays a direction for a much stronger model and not a claim about this one. 
 
    ### Future Improvements
 
    To improve the model the following steps can be implemented on the same dataset:
 
-   1. Weighted Loss Function: Class weights can be implemented during training to penalize the model more heavily for missing a positive case than for a false alarm.
-   2. Data augmentation: For rarer diseases, the number of chest x-ray scans can be increases by rotating, zooming, or flipping the existing positive samples. 
-   3. Higher resolution: This is self evident. Feature extraction on higher resolution data will be much easier and result in more valuable results. 
+   1. Per-finding thresholds: choose each finding's cutoff on the validation set for a target sensitivity, then fix it before touching the test set.
+   2. Weighted loss: class weights or focal loss to penalize a missed positive more heavily than a false alarm.
+   3. Data augmentation: for rarer findings, the number of positive examples can be increased by rotating, zooming, or flipping the existing positive samples. 
+   4. Higher resolution: MedMNIST+ also ships ChestMNIST at 64, 128, and 224 pixels, and small findings like nodules are close to invisible at 28×28. 
 
 ## Conclusion
 
-   A CNN pipeline was successfully implemented for multilabel X-ray classification, achieving a test AUC of 0.7353. While the current model exhibits bias towards the majority classes in the data set, it can be easily improved with a larger, more diverse, dataset of higher resolution in conjunction with the improvements listed above. By doing so, the system can be used for automated diagnostics in radiology and significantly improve patient turnover times.
+   ChestNet reaches a macro test AUC of 0.7353 on ChestMNIST, which is a reasonable baseline for a 392k-parameter CNN on 28×28 images, but at the default threshold it misses nearly every positive case and its accuracy is indistinguishable from always predicting "no finding". Per-finding thresholds, a class-weighted loss, and higher-resolution inputs are the changes I expect to matter, and any claim about clinical usefulness would need all three plus external validation.
 
 
-**To run the code**: Clone the github repository, open test.ipynb, and run all cells. The model should evaluate on the test set, and display performance metrics as well as confusion matrices for each disease.
-**To use a different dataset**: Ensure the new data is has the shape (N, 28, 28) and that the images are grayscale. Open the training notebook and locate the second code cell. Replace the code:
+**To run the code**: Clone the repository, download `chestmnist.npz` (the 28×28 version) from the [MedMNIST Zenodo record](https://zenodo.org/records/10519652) into the repo folder, and download the trained model from the [v1.0 release](https://github.com/taherakolawala/chestnet/releases/tag/v1.0) (`gh release download v1.0 -R taherakolawala/chestnet`). Then open test.ipynb and run all cells; it evaluates on the test set and draws the confusion matrix for each finding.
+**To use a different dataset**: Ensure the new data has the shape (N, 28, 28) and that the images are grayscale. Open the training notebook and locate the second code cell. Replace the code:
 `chestdata = np.load('[YOUR_DATA].npz')`. Then run all cells again. You can tweak the user parameters of learning rate, batch size, epochs, and architecture neuron counts if you wish. 
